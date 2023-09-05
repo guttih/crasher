@@ -1,7 +1,6 @@
 #ifndef APPLICATION_BASE_H
 #define APPLICATION_BASE_H
 
-
 namespace crasher
 {
 
@@ -18,10 +17,12 @@ enum PROGRAM_EXIT_TYPE
 
 enum OPTION {
     OPTION_HELP,
+    OPTION_DEBUG,
     OPTION_VERSION,
-    OPTION_CRASH_TYPE,
     OPTION_AFTER,
     OPTION_AT,
+    OPTION_CRASH_TYPE,
+    OPTION_UNKNOWN,
     OPTION_COUNT
 };
 

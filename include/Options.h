@@ -11,12 +11,15 @@ class Options
 {
 public:
     Options();
-    // Crasher::PARAM_OPTION parse( std::string argument, bool throwExceptionOnError = true );
-    crasher::OPTION parse( std::string argument, bool throwExceptionOnError );
     ~Options();
+    OPTION stringToEnum( std::string argument, bool throwExceptionOnError = true );
+    std::string getName( OPTION option,  bool throwExceptionOnError = true );
+    unsigned long stringToUlong( std::string argument, bool throwExceptionOnError = true );
+    bool findOption( OPTION findMe, char *argv[], int argc );
+
 
 private:
-
+    bool isNumber( const std::string& s );
 };
 }
 

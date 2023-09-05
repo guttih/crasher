@@ -5,10 +5,13 @@ namespace crasher
 
 OPTION_TEXT options[ OPTION::OPTION_COUNT ] = {
     "help",
+    "debug",
     "version",
-    "crash-type",
-    "time-after",
-    "time-at"
+    "after",
+    "at",
+    "crash"
 };
+
+
 
 } // namespace crasher

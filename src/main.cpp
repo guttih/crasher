@@ -4,73 +4,171 @@
 #include "Options.h"
 #include "Stopwatch.h"
 
+using namespace crasher;
 
-int main( int argc, char* argv[] )
+bool debugging = false;
+PROGRAM_EXIT_TYPE exitType = PROGRAM_EXIT_TYPE::SUCCESS;
+void debugPrint( std::string message )
 {
-    // Argument argHelp( Argument::ARGUMENT::HELP,         Argument::PARAM_TYPE::NONE,   0, { "help", "h" } );
+    if( !debugging )
+        return;
+    std::cout << message;
+}
 
-    // Arguments aa;
-    // aa.init();
-    crasher::Options options;
+void debugPrint( std::string msg1, std::string msg2 )
+{
+    debugPrint( msg1 + msg2 );
+}
+void debugPrintLn( std::string message )
+{
+    debugPrint( message + "\n" );
+}
+void debugPrintLn( std::string msg1, std::string msg2 )
+{
+    debugPrint( msg1 + msg2 + "\n" );
+}
+
+int crashWithDivisionByZero()
+{
+    debugPrintLn( "with error division by zero." );
+    int a = 0;
+    a = 2 / a;
+    return 1;
+}
+int crashWithSegmentFault()
+{
+    debugPrintLn( "with error segment fault." );
+    int *intPtr = nullptr;
+    *intPtr = 42;
+    return PROGRAM_EXIT_TYPE::SEGMENT_FAULT;
+}
+
+int crashWithThrowException()
+{
+    debugPrintLn( "by throwing an error." );
+    throw std::runtime_error( "Exception thrown" );
+}
+
+
+int main( int argc, char *argv[] )
+{
+    int *intPtr = nullptr;
+    Stopwatch stopwatch;
+    Options options;
+    debugging = options.findOption( OPTION::OPTION_DEBUG, argv, argc );
     Output o( argv[ 0 ] );
     Version v( 1, 0 );
-    std::cout << "Crasher x- version " << v.c_str() << std::endl;
+
+    debugPrintLn( "Crasher ", v.c_str() );
     auto t_start = std::chrono::high_resolution_clock::now();
     if( argc < 2 )
     {
-        std::cerr << "Usage: " << argv[ 0 ] << " <argument1>[ argument2 ... ] \
-    " << std::endl;
-        return 1;  // Exit with an error code
+        o.help();
+        return PROGRAM_EXIT_TYPE::SUCCESS;
     }
 
-    int a=0;
 
-    int b = 3 / a;
-
+    OPTION currentOption = OPTION::OPTION_UNKNOWN;
+    OPTION selectedTimer = OPTION::OPTION_UNKNOWN;
+    unsigned long ulValue;
+    unsigned long msStopAfter = 0;
     for( int i = 1; i < argc; i++ )
     {
-        std::string argument = argv[ i ];
-        // if( argument == " - h " || argument == " - H "  || argument == " --help "  || argument == " - help " )
-        // {
-        //     o.help();
-        //     return PROGRAM_EXIT_TYPE::SUCCESS;
-        // }
-        // else
-        // {
-        //     if( argument == " - v " || argument == " --version " )
-        //     {
-        //         std::cout << "Crasher - version " << v.c_str() << std::endl;
-        //         return PROGRAM_EXIT_TYPE::SUCCESS;
-        //     }
-        // }
-
-        options.parse( argument, true );
-
-        std::cout << "Argument " << i << " : " << argument << std::endl;
-
-
-    }
-
-    Stopwatch stopwatch;
-    stopwatch.start();
-    auto now = stopwatch.now();
-    std::cout << "     Now: " << stopwatch.formatTime( now ) << std::endl;
-    std::cout << " +10 sec: " << stopwatch.formatTime( stopwatch.addMilliseconds( now, 10000 ) ) << std::endl;
-    // std::cout << "Starting " << stopwatch.nowString() << std::endl;
-    std::cout << "Starting stopwatch" << stopwatch.elapsedString() << std::endl;
-
-
-    while( true )
-    {
-        if( stopwatch.elapsed_time() > 10000 )
+        std::string optArg = argv[ i ];
+        std::string argument;
+        currentOption = options.stringToEnum( optArg, true );
+        debugPrint( "Option " + std::to_string( i ) + " : " + optArg );
+        switch( currentOption )
         {
-            std::cout << "Crashing now!" << std::endl;
-            std::cout << "stopwatch" << stopwatch.elapsedString() << std::endl;
-            std::cout << "started at " << stopwatch.formatTime( stopwatch.convert( stopwatch.getStartTime() ) ) << std::endl;
-            std::cout << "Stopping: " << stopwatch.nowString() << std::endl;
+            case OPTION::OPTION_HELP:
+                o.help();
+                return PROGRAM_EXIT_TYPE::SUCCESS;
+                break;
 
-            return 0;
+            case OPTION::OPTION_VERSION:
+                std::cout << "version " << v.c_str() << std::endl;
+                return PROGRAM_EXIT_TYPE::SUCCESS;
+                break;
+            case OPTION::OPTION_CRASH_TYPE:
+                if( i + 1 >= argc )
+                    throw std::runtime_error( std::string( "Option argument missing for : " ) + options.getName( OPTION_CRASH_TYPE ) );
+                i++;
+                argument = argv[ i ];
+                debugPrint( " " + std::string( argument ) );
+                if( argument == "divZero" )
+                    exitType = PROGRAM_EXIT_TYPE::DIVISION_BY_ZERO;
+                else if( argument == "segFault" )
+                    exitType = PROGRAM_EXIT_TYPE::SEGMENT_FAULT;
+                else if( argument == "throw" )
+                    exitType = PROGRAM_EXIT_TYPE::THROW_EXCEPTION;
+                else
+                    throw std::runtime_error( std::string( "Unknown crash type: " ) + argument + " or missing argument." );
+                break;
+
+            case OPTION::OPTION_AFTER:
+                if( i + 1 >= argc )
+                    throw std::runtime_error( std::string( "Option argument missing for : " ) + options.getName( OPTION_AFTER ) );
+                i++;
+                debugPrint( " " + std::string( argv[ i ] ) );
+                msStopAfter = options.stringToUlong( argv[ i ], true );
+                if( msStopAfter > 0 )
+                {
+                    selectedTimer = currentOption;
+                    stopwatch.start( msStopAfter );
+                }
+                break;
+            case OPTION::OPTION_AT:
+
+                if( i + 1 >= argc )
+                    throw std::runtime_error( std::string( "Option argument missing for : " ) + options.getName( OPTION_AT ) );
+                i++;
+                argument = argv[ i ];
+                debugPrint( " " + std::string( argument ) );
+                std::tm timeInfo = stopwatch.stringToTime( argument );
+                if( timeInfo.tm_year > 0 )
+                {
+                    selectedTimer = currentOption;
+                    stopwatch.start( timeInfo );
+                }
+                break;
         }
+        debugPrintLn( "" );
 
     }
+
+    debugPrintLn( stopwatch.infoString() );
+    while( stopwatch.isActive() )
+    {
+    }
+
+    debugPrint( "Exiting " );
+    switch( exitType )
+    {
+        case PROGRAM_EXIT_TYPE::SUCCESS:
+            debugPrintLn( "normally with success.c++ how do i cause a sementfault safely" );
+            return PROGRAM_EXIT_TYPE::SUCCESS;
+            break;
+        case PROGRAM_EXIT_TYPE::ERROR:
+            debugPrintLn( "normally with error." );
+            return PROGRAM_EXIT_TYPE::ERROR;
+            break;
+
+
+        case PROGRAM_EXIT_TYPE::THROW_EXCEPTION:
+            return crashWithThrowException();
+            break;
+
+        case PROGRAM_EXIT_TYPE::SEGMENT_FAULT:
+            return crashWithSegmentFault();
+            break;
+        case PROGRAM_EXIT_TYPE::DIVISION_BY_ZERO:
+            return crashWithDivisionByZero();
+            break;
+    }
+
+    debugPrintLn( "Exiting: " + stopwatch.nowString() );
 }
+
+
+
+
