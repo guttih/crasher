@@ -3,6 +3,7 @@
 #include "Output.h"
 #include "Options.h"
 #include "Stopwatch.h"
+#include <thread>
 
 using namespace crasher;
 
@@ -31,9 +32,11 @@ void debugPrintLn( std::string msg1, std::string msg2 )
 int crashWithDivisionByZero()
 {
     debugPrintLn( "with error division by zero." );
-    int a = 0;
-    a = 2 / a;
-    return 1;
+    int a = 1;
+    int b=2;
+    a--;
+    b = 21 / a;
+    return b;
 }
 int crashWithSegmentFault()
 {
@@ -139,13 +142,14 @@ int main( int argc, char *argv[] )
     debugPrintLn( stopwatch.infoString() );
     while( stopwatch.isActive() )
     {
+        std::this_thread::sleep_for( std::chrono::milliseconds( 100 ) );
     }
 
     debugPrint( "Exiting " );
     switch( exitType )
     {
         case PROGRAM_EXIT_TYPE::SUCCESS:
-            debugPrintLn( "normally with success.c++ how do i cause a sementfault safely" );
+            debugPrintLn( "normally with success" );
             return PROGRAM_EXIT_TYPE::SUCCESS;
             break;
         case PROGRAM_EXIT_TYPE::ERROR:

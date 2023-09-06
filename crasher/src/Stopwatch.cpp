@@ -131,7 +131,7 @@ std::chrono::time_point< std::chrono::system_clock > Stopwatch::getStartTime() c
     return _start_time;
 }
 
-std::tm Stopwatch::overwrite( std::tm timeBase, const std::tm timeOverwrite )
+std::tm Stopwatch::overwrite( const std::tm timeBase, const std::tm timeOverwrite )
 {
     std::tm retTime = timeBase;
 

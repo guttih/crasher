@@ -98,7 +98,7 @@ public:
      * @param timeOverwrite
      * @return std::tm
      */
-    std::tm overwrite( std::tm timeBase, const std::tm timeOverwrite );
+    std::tm overwrite( const std::tm timeBase, const std::tm timeOverwrite );
 
 };
 
